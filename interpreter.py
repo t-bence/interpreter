@@ -2,7 +2,10 @@
 #
 # EOF (end-of-file) token is used to indicate that
 # there is no more input left for lexical analysis
-INTEGER, PLUS, MINUS, EOF = 'INTEGER', 'PLUS', 'MINUS', 'EOF'
+INTEGER, PLUS, MINUS, TIMES, DIV, EOF = 'INTEGER', 'PLUS', 'MINUS', 'TIMES', 'DIV', 'EOF'
+OPERATORS = {"+": PLUS, "-": MINUS, "*": TIMES, "/": DIV}
+FUNCTIONS = {"+": lambda a,b: a+b, "-": lambda a,b: a-b,
+             "*": lambda a,b: a*b, "/": lambda a,b: a/b}
 
 
 class Token(object):
@@ -28,7 +31,7 @@ class Token(object):
 class Interpreter(object):
     def __init__(self, text):
         # client string input, e.g. "3+5"
-        self.text = text.replace(" ", "")
+        self.text = text
         # self.pos is an index into self.text
         self.pos = 0
         # current token instance
@@ -73,13 +76,10 @@ class Interpreter(object):
             if self.current_char.isdigit():
                 return Token(INTEGER, self.integer())
 
-            if self.current_char == '+':
+            if self.current_char in OPERATORS.keys():
+                tk = Token(OPERATORS[self.current_char], self.current_char)
                 self.advance()
-                return Token(PLUS, '+')
-
-            if self.current_char == '-':
-                self.advance()
-                return Token(MINUS, '-')
+                return tk
 
             self.error()
 
@@ -106,10 +106,8 @@ class Interpreter(object):
 
         # we expect the current token to be a '+' token
         op = self.current_token
-        if op.type == PLUS:
-            self.eat(PLUS)
-        else:
-            self.eat(MINUS)
+        if op.value in OPERATORS.keys():
+            self.eat(op.type)
 
         # we expect the current token to be a single-digit integer
         right = self.current_token
@@ -121,12 +119,7 @@ class Interpreter(object):
         # has been successfully found and the method can just
         # return the result of adding two integers, thus
         # effectively interpreting client input
-        result = None
-        if op.type == PLUS:
-            result = left.value + right.value
-        elif op.type == MINUS:
-            result = left.value - right.value
-        return result
+        return FUNCTIONS[op.value](left.value, right.value)
 
 
 def main():
